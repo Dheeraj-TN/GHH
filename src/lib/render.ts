@@ -195,10 +195,16 @@ function renderPfp(ctx: CanvasRenderingContext2D, o: RenderOptions) {
   const t = o.theme;
   const cx = w / 2;
   const cy = h / 2;
-  const outer = w / 2; // inscribed circle X will display
+  const pad = w * 0.05; // breathing room baked inside the graphic
+  const outer = w / 2 - pad; // disc no longer touches the image edges
 
-  // corners (cropped on X, nice on download) + backdrop
-  ctx.fillStyle = t.bg;
+  // backdrop behind the disc (the inner padding)
+  ctx.fillStyle = t.bgDeep;
+  ctx.fillRect(0, 0, w, h);
+  const halo = ctx.createRadialGradient(cx, cy, outer * 0.6, cx, cy, w / 2);
+  halo.addColorStop(0, hexA(t.sun2, 0.12));
+  halo.addColorStop(1, hexA(t.bgDeep, 0));
+  ctx.fillStyle = halo;
   ctx.fillRect(0, 0, w, h);
 
   // full sunset disc
@@ -218,6 +224,15 @@ function renderPfp(ctx: CanvasRenderingContext2D, o: RenderOptions) {
   waves(ctx, cx - outer * 0.7, cy + outer * 0.62, outer * 1.4, "rgba(20,10,40,0.28)", 10);
   palm(ctx, cx - outer * 0.66, cy + outer * 0.66, 120, "rgba(20,10,40,0.55)");
   palm(ctx, cx + outer * 0.6, cy + outer * 0.7, 150, "rgba(20,10,40,0.55)");
+  ctx.restore();
+
+  // slight border around the disc, sitting in the inner padding
+  ctx.save();
+  // ctx.lineWidth = w * 0.006;
+  // ctx.strokeStyle = hexA(t.sun2, 0.55);
+  // ctx.beginPath();
+  // ctx.arc(cx, cy, outer + ctx.lineWidth * 0.9, 0, Math.PI * 2);
+  // ctx.stroke();
   ctx.restore();
 
   // photo circle
@@ -255,28 +270,10 @@ function renderPfp(ctx: CanvasRenderingContext2D, o: RenderOptions) {
   });
   ctx.fillStyle = "rgba(255,247,236,0.92)";
   ctx.font = `800 ${outer * 0.07}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
-  // top arc reads left→right upright
-  curvedText(ctx, BRAND.hashtag.toUpperCase(), cx, cy, bandR - 2, -Math.PI / 2, {
+  // top arc reads left→right upright, with small star separators flanking it
+  curvedText(ctx, `✦  ${BRAND.hashtag.toUpperCase()}  ✦`, cx, cy, bandR - 2, -Math.PI / 2, {
     letterSpacing: 3,
   });
-
-  // little sun badge at top of ring
-  const badgeY = cy - bandR;
-  ctx.save();
-  ctx.fillStyle = t.sun;
-  ctx.beginPath();
-  ctx.arc(cx, badgeY, outer * 0.052, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = BRAND.colors.cream;
-  ctx.lineWidth = 3;
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2;
-    ctx.beginPath();
-    ctx.moveTo(cx + Math.cos(a) * outer * 0.06, badgeY + Math.sin(a) * outer * 0.06);
-    ctx.lineTo(cx + Math.cos(a) * outer * 0.078, badgeY + Math.sin(a) * outer * 0.078);
-    ctx.stroke();
-  }
-  ctx.restore();
 }
 
 /* ----------------------------- Format B: ID card ----------------------------- */
@@ -401,11 +398,16 @@ function renderCard(ctx: CanvasRenderingContext2D, o: RenderOptions) {
   fitText(ctx, name, innerW, 64, 40);
   ctx.fillText(name, inner, y);
 
-  // role / stack
+  // role / stack — painted in the theme's own colours so it always matches
   y += 52;
-  ctx.fillStyle = t.accent;
   ctx.font = `700 30px system-ui, sans-serif`;
   const role = o.role.trim() || "Builder · Full-stack";
+  const rw = Math.max(1, ctx.measureText(role).width);
+  const rg = ctx.createLinearGradient(inner, 0, inner + rw, 0);
+  rg.addColorStop(0, t.sun2);
+  rg.addColorStop(0.5, t.stops[2][1]);
+  rg.addColorStop(1, t.stops[3][1]);
+  ctx.fillStyle = rg;
   ctx.fillText(role, inner, y);
 
   // footer: id + hashtag

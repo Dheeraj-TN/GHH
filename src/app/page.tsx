@@ -216,7 +216,7 @@ export default function Home() {
             <button
               key={f}
               onClick={() => setFormat(f)}
-              className="px-5 py-2 rounded-full text-sm font-bold transition"
+              className="px-5 py-2 rounded-full text-sm font-bold transition cursor-pointer"
               style={
                 format === f
                   ? { background: btnGrad, color: "#fff" }
@@ -243,14 +243,15 @@ export default function Home() {
                 onClick={() => setTheme(th)}
                 title={th.name}
                 aria-label={th.name}
-                className="rounded-full transition"
+                className="rounded-full transition cursor-pointer"
                 style={{
-                  width: 38,
-                  height: 38,
-                  background: `linear-gradient(135deg, ${th.stops.map(([, c]) => c).join(",")})`,
-                  border: active ? "3px solid #fff7ec" : "3px solid transparent",
-                  boxShadow: active ? "0 0 0 2px rgba(255,247,236,.25)" : "0 2px 8px rgba(0,0,0,.35)",
-                  transform: active ? "scale(1.12)" : "scale(1)",
+                  width: 40,
+                  height: 40,
+                  backgroundImage: `linear-gradient(135deg, ${th.stops.map(([, c]) => c).join(",")})`,
+                  boxShadow: active
+                    ? "0 0 0 3px #160e2e, 0 0 0 5px #fff7ec"
+                    : "0 2px 8px rgba(0,0,0,.35)",
+                  transform: active ? "scale(1.1)" : "scale(1)",
                 }}
               />
             );
@@ -281,11 +282,12 @@ export default function Home() {
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerUp}
-              className="w-full h-auto rounded-3xl select-none touch-none"
+              className="w-full h-auto rounded-3xl select-none touch-none block"
               style={{
                 aspectRatio: canvasAspect,
                 cursor: image ? "grab" : "pointer",
-                boxShadow: "0 20px 60px rgba(0,0,0,.45)",
+                border: "1px solid rgba(255,247,236,.14)",
+                boxShadow: "0 24px 70px rgba(0,0,0,.5)",
               }}
               onClick={() => !image && fileRef.current?.click()}
             />
@@ -334,10 +336,11 @@ export default function Home() {
           />
           <button
             onClick={() => fileRef.current?.click()}
-            className="w-full py-3 rounded-2xl font-bold text-sm"
+            className="w-full py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer"
             style={{ background: "rgba(255,247,236,.10)", color: BRAND.colors.cream }}
           >
-            {image ? "↻ Change photo" : "⬆ Upload photo"}
+            {image ? <RefreshIcon /> : <UploadIcon />}
+            {image ? "Change photo" : "Upload photo"}
           </button>
 
           {format === "card" && (
@@ -365,10 +368,11 @@ export default function Home() {
                       setTitleTouched(true);
                       setTitle(randomTitle());
                     }}
-                    className="text-xs font-bold"
-                    style={{ color: BRAND.colors.gold }}
+                    className="text-xs font-bold flex items-center gap-1 cursor-pointer"
+                    style={{ color: theme.sun }}
                   >
-                    🎲 shuffle
+                    <ShuffleIcon />
+                    shuffle
                   </button>
                 </div>
                 <input
@@ -387,18 +391,20 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={download}
-              className="py-3 rounded-2xl font-bold text-sm"
+              className="py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer"
               style={{ background: "rgba(255,247,236,.12)", color: BRAND.colors.cream }}
             >
-              ⬇ Download
+              <DownloadIcon />
+              Download
             </button>
             <button
               onClick={shareToX}
               disabled={busy}
-              className="py-3 rounded-2xl font-bold text-sm disabled:opacity-60"
+              className="py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ background: btnGrad, color: "#fff" }}
             >
-              𝕏 Share
+              <XIcon />
+              Share
             </button>
           </div>
 
@@ -448,6 +454,65 @@ function Field({
     </label>
   );
 }
+
+/* ------------------------------ icons ------------------------------ */
+function Stroke({ children }: { children: React.ReactNode }) {
+  return (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.1"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={{ flexShrink: 0 }}
+    >
+      {children}
+    </svg>
+  );
+}
+
+const UploadIcon = () => (
+  <Stroke>
+    <path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
+    <path d="M12 15V3" />
+    <path d="m7 8 5-5 5 5" />
+  </Stroke>
+);
+
+const DownloadIcon = () => (
+  <Stroke>
+    <path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
+    <path d="M12 3v12" />
+    <path d="m7 10 5 5 5-5" />
+  </Stroke>
+);
+
+const RefreshIcon = () => (
+  <Stroke>
+    <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+    <path d="M21 3v5h-5" />
+  </Stroke>
+);
+
+const ShuffleIcon = () => (
+  <Stroke>
+    <path d="M16 3h5v5" />
+    <path d="M4 20 21 3" />
+    <path d="M21 16v5h-5" />
+    <path d="M15 15l6 6" />
+    <path d="M4 4l5 5" />
+  </Stroke>
+);
+
+const XIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ flexShrink: 0 }}>
+    <path d="M18.244 2H21.5l-7.5 8.57L23 22h-6.9l-5.4-7.07L4.5 22H1.24l8.02-9.17L1 2h7.08l4.88 6.45L18.244 2Zm-1.2 18h1.9L7.05 4H5.02l12.02 16Z" />
+  </svg>
+);
 
 function clamp(v: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, v));

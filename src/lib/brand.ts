@@ -62,7 +62,7 @@ export const THEMES: Theme[] = [
     ],
     sun: "#FDE047",
     sun2: "#FB7233",
-    accent: "#2DD4BF",
+    accent: "#B6F94A",
     bg: "#2A1150",
     bgDeep: "#170A34",
   },
