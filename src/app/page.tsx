@@ -1,11 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { CANVAS, render, type Format, type PhotoTransform } from "@/lib/render";
 import { loadImageFile, type LoadedImage } from "@/lib/loadImage";
 import { BRAND, builderId, builderTitle, DEFAULT_THEME, THEMES, type Theme } from "@/lib/brand";
 
-const CAPTION = `Locked in for Hacker House Goa 2026 🌴🔥 Come build with us. ${BRAND.hashtag}`;
+const APP_URL = "https://ghh-ten.vercel.app";
+const CAPTION = `Locked in for Hacker House Goa 2026 🌴🔥 Come build with us. ${BRAND.hashtag}
+
+Think you can make a cooler one? 😏 Frame yours 👉 ${APP_URL}`;
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -21,7 +25,6 @@ export default function Home() {
   const [titleTouched, setTitleTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
   // auto-derive builder title from name/stack unless user edited it
   useEffect(() => {
@@ -51,10 +54,7 @@ export default function Home() {
     });
   }, [format, image, transform, name, role, title, theme]);
 
-  const flash = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2600);
-  };
+  const flash = (msg: string) => toast(msg);
 
   const handleFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/") && !/\.(heic|heif)$/i.test(file.name)) {
@@ -150,22 +150,40 @@ export default function Home() {
         }
       }
 
-      // Desktop fallback: store the graphic, open a tweet whose link preview
-      // (OG image) is the actual graphic.
-      const dataUrl = canvasRef.current!.toDataURL("image/png");
-      const res = await fetch("/api/share", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dataUrl }),
-      });
-      if (!res.ok) throw new Error("share store failed");
-      const { id } = await res.json();
-      const shareUrl = `${location.origin}/s/${id}`;
-      const intent = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-        CAPTION,
-      )}&url=${encodeURIComponent(shareUrl)}`;
-      window.open(intent, "_blank", "noopener,noreferrer");
-      flash("Opening X…");
+      // Desktop: X's web composer can't accept a pre-attached image via URL, so
+      // copy the actual PNG to the clipboard and open the composer with the
+      // caption pre-filled — the user just pastes the image (⌘/Ctrl+V).
+      let copied = false;
+      try {
+        if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+          copied = true;
+        }
+      } catch {
+        // clipboard blocked/unsupported → we fall back to a download below
+      }
+
+      const intent = `https://twitter.com/intent/tweet?text=${encodeURIComponent(CAPTION)}`;
+
+      if (copied) {
+        toast.success("Poster copied to clipboard — opening X, just paste (⌘/Ctrl+V) 🌴", {
+          duration: 2000,
+        });
+      } else {
+        // guarantee the user has the file to attach manually
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `hh-goa-2026-${format}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast("Poster downloaded — opening X, attach it to your tweet", { duration: 2000 });
+      }
+
+      // let the toast be seen for 2s, then head to the X composer
+      window.setTimeout(() => {
+        window.location.href = intent;
+      }, 2000);
     } catch (e) {
       console.error(e);
       flash("Share failed — try Download instead.");
@@ -410,20 +428,12 @@ export default function Home() {
 
           <p className="text-xs leading-relaxed" style={{ color: "rgba(255,247,236,.45)" }}>
             Everything renders in your browser — no upload, no login. On phones, Share attaches the
-            image straight to X. On desktop it opens a pre-filled tweet with a link preview of your
-            graphic. Caption &amp; {BRAND.hashtag} included.
+            image straight to X. On desktop, the image is copied to your clipboard and the tweet
+            opens pre-filled — just paste (⌘/Ctrl+V). Caption &amp; {BRAND.hashtag} included.
           </p>
         </div>
       </div>
 
-      {toast && (
-        <div
-          className="fixed left-1/2 -translate-x-1/2 bottom-6 px-4 py-2 rounded-full text-sm font-semibold z-50"
-          style={{ background: "#fff7ec", color: "#160e2e", boxShadow: "0 8px 30px rgba(0,0,0,.4)" }}
-        >
-          {toast}
-        </div>
-      )}
     </main>
   );
 }
